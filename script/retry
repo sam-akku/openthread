@@ -200,7 +200,7 @@ prepare_apt_retry()
         stop_lingering_apt_processes
     fi
 
-    sudo rm -rf /var/lib/apt/lists/partial/* /var/cache/apt/archives/partial/* || true
+    sudo find /var/lib/apt/lists/partial /var/cache/apt/archives/partial -mindepth 1 -delete 2>/dev/null || true
     if command -v timeout >/dev/null 2>&1; then
         sudo timeout --kill-after=10 60 env DEBIAN_FRONTEND=noninteractive dpkg --configure -a >/dev/null 2>&1 || dpkg_rc=$?
         if [[ ${dpkg_rc} -eq 124 || ${dpkg_rc} -eq 137 ]]; then
@@ -231,7 +231,7 @@ EOF
 
 resolve_attempt_timeout()
 {
-    local docker_pattern='docker[[:space:]]+build|build_otbr_docker'
+    local long_pattern='docker[[:space:]]+build|build_otbr_docker|install-llvm\.sh'
     local toranj_pattern='toranj/start\.sh[[:space:]]+bootstrap'
 
     if [[ -n ${OT_RETRY_TIMEOUT+x} ]]; then
@@ -244,8 +244,8 @@ resolve_attempt_timeout()
     fi
 
     if [[ $# -ge 1 ]]; then
-        if [[ $* =~ ${docker_pattern} ]] || {
-            [[ -f $1 ]] && grep -IqE "${docker_pattern}" -- "$1" 2>/dev/null
+        if [[ $* =~ ${long_pattern} ]] || {
+            [[ -f $1 ]] && grep -IqE "${long_pattern}" -- "$1" 2>/dev/null
         }; then
             printf '%s\n' "420"
             return 0
